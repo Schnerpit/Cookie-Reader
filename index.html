@@ -59,11 +59,31 @@
     <script>
         let isTrackingEnabled = false;
 
+        // Utility function to set a cookie
+        function setCookie(name, value, days) {
+            const date = new Date();
+            date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+            document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/; expires=${date.toUTCString()}`;
+        }
+
+        // Utility function to get a cookie value
+        function getCookie(name) {
+            const cookies = document.cookie.split('; ');
+            for (let cookie of cookies) {
+                const [key, value] = cookie.split('=');
+                if (decodeURIComponent(key) === name) {
+                    return decodeURIComponent(value);
+                }
+            }
+            return null;
+        }
+
         // Function to toggle URL tracking
         function toggleTracking() {
             isTrackingEnabled = !isTrackingEnabled;
             const button = document.getElementById("toggleTrackingButton");
             button.textContent = isTrackingEnabled ? "Disable URL Tracking" : "Enable URL Tracking";
+            setCookie("urlTrackingEnabled", isTrackingEnabled, 365); // Save state in cookie
             alert(`URL Tracking has been ${isTrackingEnabled ? "enabled" : "disabled"}.`);
         }
 
@@ -161,15 +181,21 @@
             document.cookie = `lastVisit=${encodeURIComponent(now)}; path=/; expires=${new Date(now).setFullYear(new Date().getFullYear() + 1)}`;
         });
 
-        // Display cookies and set up last visit on page load
+        // Initialize state on page load
         window.addEventListener("load", () => {
-            const lastVisitCookie = document.cookie.split('; ').find(cookie => cookie.startsWith("lastVisit="));
+            const lastVisitCookie = getCookie("lastVisit");
             if (lastVisitCookie) {
-                const lastVisit = decodeURIComponent(lastVisitCookie.split('=')[1]);
-                alert(`Welcome back! Your last visit was on ${new Date(lastVisit).toLocaleString()}`);
+                alert(`Welcome back! Your last visit was on ${new Date(lastVisitCookie).toLocaleString()}`);
             } else {
                 alert("Welcome! This is your first visit.");
             }
+
+            // Restore URL tracking state
+            const trackingState = getCookie("urlTrackingEnabled");
+            isTrackingEnabled = trackingState === "true";
+            const button = document.getElementById("toggleTrackingButton");
+            button.textContent = isTrackingEnabled ? "Disable URL Tracking" : "Enable URL Tracking";
+
             displayCookies();
         });
     </script>
