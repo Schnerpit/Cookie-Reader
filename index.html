@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Cookie Manager</title>
+    <title>Advanced Cookie Manager with URL Tracking</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,7 +21,7 @@
     </style>
 </head>
 <body>
-    <h1>Advanced Cookie Manager</h1>
+    <h1>Advanced Cookie Manager with URL Tracking</h1>
     <p>Use the options below to add, view, or manage cookies.</p>
 
     <!-- Add a custom cookie -->
@@ -41,9 +41,15 @@
         <button onclick="addCustomCookie()">Add Cookie</button>
     </div>
 
+    <!-- Enable/Disable URL Tracking -->
+    <div>
+        <button id="toggleTrackingButton" onclick="toggleTracking()">Enable URL Tracking</button>
+    </div>
+
     <!-- Buttons for actions -->
     <div>
         <button onclick="displayCookies()">Show Cookies</button>
+        <button onclick="displaySavedURLs()">Show Saved URLs</button>
         <button onclick="deleteAllCookies()">Delete All Cookies Added Here</button>
     </div>
 
@@ -51,32 +57,17 @@
     <textarea id="cookieDisplay" readonly></textarea>
 
     <script>
-        // Record the user's last visit
-        function recordLastVisit() {
-            const now = new Date().toISOString();
-            document.cookie = `lastVisit=${encodeURIComponent(now)}; path=/; expires=${new Date(now).setFullYear(new Date().getFullYear() + 1)}`;
+        let isTrackingEnabled = false;
+
+        // Function to toggle URL tracking
+        function toggleTracking() {
+            isTrackingEnabled = !isTrackingEnabled;
+            const button = document.getElementById("toggleTrackingButton");
+            button.textContent = isTrackingEnabled ? "Disable URL Tracking" : "Enable URL Tracking";
+            alert(`URL Tracking has been ${isTrackingEnabled ? "enabled" : "disabled"}.`);
         }
 
-        // Display cookies in a readable format
-        function displayCookies() {
-            const cookies = document.cookie;
-            const outputArea = document.getElementById("cookieDisplay");
-
-            if (!cookies) {
-                outputArea.value = "No cookies found for this domain.";
-                return;
-            }
-
-            // Parse and display cookies
-            const formattedCookies = cookies.split('; ').map(cookie => {
-                const [name, value] = cookie.split('=');
-                return `Name: ${name}\nValue: ${decodeURIComponent(value || "")}`;
-            }).join('\n\n');
-
-            outputArea.value = formattedCookies;
-        }
-
-        // Add a custom cookie with optional expiration date
+        // Function to add a custom cookie
         function addCustomCookie() {
             const name = document.getElementById("cookieName").value.trim();
             const value = document.getElementById("cookieValue").value.trim();
@@ -101,25 +92,78 @@
             alert(`Cookie "${name}" has been added!`);
         }
 
-        // Delete all cookies added here
+        // Function to display cookies and URL tracking data
+        function displayCookies() {
+            const cookies = document.cookie;
+            const outputArea = document.getElementById("cookieDisplay");
+
+            if (!cookies) {
+                outputArea.value = "No cookies found for this domain.";
+                return;
+            }
+
+            // Parse and display cookies
+            const formattedCookies = cookies.split('; ').map(cookie => {
+                const [name, value] = cookie.split('=');
+                return `Name: ${name}\nValue: ${decodeURIComponent(value || "")}`;
+            }).join('\n\n');
+
+            // Retrieve the tracked URLs from localStorage
+            const trackedUrls = JSON.parse(localStorage.getItem("trackedUrls") || "[]");
+            const trackingInfo = trackedUrls.length
+                ? `\n\nTracked URLs:\n${trackedUrls.join("\n")}`
+                : "\n\nNo URLs tracked yet.";
+
+            outputArea.value = formattedCookies + trackingInfo;
+        }
+
+        // Function to display all URLs saved in localStorage
+        function displaySavedURLs() {
+            const outputArea = document.getElementById("cookieDisplay");
+            const trackedUrls = JSON.parse(localStorage.getItem("trackedUrls") || "[]");
+
+            if (trackedUrls.length === 0) {
+                outputArea.value = "No saved URLs found.";
+                return;
+            }
+
+            outputArea.value = `Saved URLs:\n${trackedUrls.join("\n")}`;
+        }
+
+        // Function to delete all cookies and clear tracking data
         function deleteAllCookies() {
             const cookies = document.cookie.split('; ');
             cookies.forEach(cookie => {
                 const [name] = cookie.split('=');
                 document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;`;
             });
-            alert("All cookies have been deleted!");
+            localStorage.removeItem("trackedUrls");
+            alert("All cookies and tracking data have been deleted!");
             displayCookies();
         }
 
-        // Set the last visit cookie on page unload
-        window.addEventListener('unload', () => {
-            recordLastVisit();
+        // Event listener to track navigation
+        document.addEventListener("click", event => {
+            if (!isTrackingEnabled) return;
+
+            const link = event.target.closest("a");
+            if (link && link.href) {
+                // Save the URL to localStorage
+                const trackedUrls = JSON.parse(localStorage.getItem("trackedUrls") || "[]");
+                trackedUrls.push(link.href);
+                localStorage.setItem("trackedUrls", JSON.stringify(trackedUrls));
+            }
         });
 
-        // Display cookies and set up the last visit on page load
-        window.addEventListener('load', () => {
-            const lastVisitCookie = document.cookie.split('; ').find(cookie => cookie.startsWith('lastVisit='));
+        // Set last visit cookie on page unload
+        window.addEventListener("unload", () => {
+            const now = new Date().toISOString();
+            document.cookie = `lastVisit=${encodeURIComponent(now)}; path=/; expires=${new Date(now).setFullYear(new Date().getFullYear() + 1)}`;
+        });
+
+        // Display cookies and set up last visit on page load
+        window.addEventListener("load", () => {
+            const lastVisitCookie = document.cookie.split('; ').find(cookie => cookie.startsWith("lastVisit="));
             if (lastVisitCookie) {
                 const lastVisit = decodeURIComponent(lastVisitCookie.split('=')[1]);
                 alert(`Welcome back! Your last visit was on ${new Date(lastVisit).toLocaleString()}`);
