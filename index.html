@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cookie Viewer</title>
+    <title>Advanced Cookie Manager</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,9 +21,10 @@
     </style>
 </head>
 <body>
-    <h1>Browser Cookies Viewer</h1>
-    <p>Use the form below to add a custom cookie, or display existing cookies.</p>
+    <h1>Advanced Cookie Manager</h1>
+    <p>Use the options below to add, view, or manage cookies.</p>
 
+    <!-- Add a custom cookie -->
     <div>
         <div class="form-group">
             <label for="cookieName">Cookie Name:</label>
@@ -33,53 +34,100 @@
             <label for="cookieValue">Cookie Value:</label>
             <input type="text" id="cookieValue" placeholder="Enter cookie value" required>
         </div>
+        <div class="form-group">
+            <label for="cookieExpiration">Expiration Date (optional, format: YYYY-MM-DDTHH:mm:ssZ):</label>
+            <input type="text" id="cookieExpiration" placeholder="e.g., 2024-12-31T23:59:59Z">
+        </div>
         <button onclick="addCustomCookie()">Add Cookie</button>
-        <button onclick="displayCookies()">Show Cookies</button>
     </div>
 
+    <!-- Buttons for actions -->
+    <div>
+        <button onclick="displayCookies()">Show Cookies</button>
+        <button onclick="deleteAllCookies()">Delete All Cookies Added Here</button>
+    </div>
+
+    <!-- Textarea to display cookies -->
     <textarea id="cookieDisplay" readonly></textarea>
 
     <script>
-        // Function to add a custom cookie based on user input
-        function addCustomCookie() {
-            const name = document.getElementById("cookieName").value.trim();
-            const value = document.getElementById("cookieValue").value.trim();
-
-            if (!name || !value) {
-                alert("Please provide both a cookie name and value.");
-                return;
-            }
-
-            const expirationDate = new Date();
-            expirationDate.setDate(expirationDate.getDate() + 7); // Set cookie to expire in 7 days
-            document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/; expires=${expirationDate.toUTCString()}`;
-            alert(`Cookie "${name}" has been added!`);
+        // Record the user's last visit
+        function recordLastVisit() {
+            const now = new Date().toISOString();
+            document.cookie = `lastVisit=${encodeURIComponent(now)}; path=/; expires=${new Date(now).setFullYear(new Date().getFullYear() + 1)}`;
         }
 
-        // Function to display all cookies
+        // Display cookies in a readable format
         function displayCookies() {
             const cookies = document.cookie;
             const outputArea = document.getElementById("cookieDisplay");
 
             if (!cookies) {
                 outputArea.value = "No cookies found for this domain.";
-                console.warn("No cookies found. Check if cookies are set for this domain.");
                 return;
             }
 
-            try {
-                // Parse and format cookies
-                const formattedCookies = cookies.split('; ').map(cookie => {
-                    const [name, value] = cookie.split('=');
-                    return `Name: ${name}\nValue: ${decodeURIComponent(value || "")}`;
-                }).join('\n\n');
+            // Parse and display cookies
+            const formattedCookies = cookies.split('; ').map(cookie => {
+                const [name, value] = cookie.split('=');
+                return `Name: ${name}\nValue: ${decodeURIComponent(value || "")}`;
+            }).join('\n\n');
 
-                outputArea.value = formattedCookies;
-            } catch (error) {
-                outputArea.value = "Error parsing cookies.";
-                console.error("Error while parsing cookies:", error);
-            }
+            outputArea.value = formattedCookies;
         }
+
+        // Add a custom cookie with optional expiration date
+        function addCustomCookie() {
+            const name = document.getElementById("cookieName").value.trim();
+            const value = document.getElementById("cookieValue").value.trim();
+            const expiration = document.getElementById("cookieExpiration").value.trim();
+
+            if (!name || !value) {
+                alert("Please provide both a cookie name and value.");
+                return;
+            }
+
+            let cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/;`;
+            if (expiration) {
+                const date = new Date(expiration);
+                if (isNaN(date)) {
+                    alert("Invalid expiration date format. Use ISO format: YYYY-MM-DDTHH:mm:ssZ");
+                    return;
+                }
+                cookieString += ` expires=${date.toUTCString()};`;
+            }
+
+            document.cookie = cookieString;
+            alert(`Cookie "${name}" has been added!`);
+        }
+
+        // Delete all cookies added here
+        function deleteAllCookies() {
+            const cookies = document.cookie.split('; ');
+            cookies.forEach(cookie => {
+                const [name] = cookie.split('=');
+                document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;`;
+            });
+            alert("All cookies have been deleted!");
+            displayCookies();
+        }
+
+        // Set the last visit cookie on page unload
+        window.addEventListener('unload', () => {
+            recordLastVisit();
+        });
+
+        // Display cookies and set up the last visit on page load
+        window.addEventListener('load', () => {
+            const lastVisitCookie = document.cookie.split('; ').find(cookie => cookie.startsWith('lastVisit='));
+            if (lastVisitCookie) {
+                const lastVisit = decodeURIComponent(lastVisitCookie.split('=')[1]);
+                alert(`Welcome back! Your last visit was on ${new Date(lastVisit).toLocaleString()}`);
+            } else {
+                alert("Welcome! This is your first visit.");
+            }
+            displayCookies();
+        });
     </script>
 </body>
 </html>
