@@ -15,15 +15,48 @@
             margin-top: 20px;
             font-family: monospace;
         }
+        .form-group {
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
     <h1>Browser Cookies Viewer</h1>
-    <p>Click the button below to view your browser's cookies.</p>
-    <button onclick="displayCookies()">Show Cookies</button>
+    <p>Use the form below to add a custom cookie, or display existing cookies.</p>
+
+    <div>
+        <div class="form-group">
+            <label for="cookieName">Cookie Name:</label>
+            <input type="text" id="cookieName" placeholder="Enter cookie name" required>
+        </div>
+        <div class="form-group">
+            <label for="cookieValue">Cookie Value:</label>
+            <input type="text" id="cookieValue" placeholder="Enter cookie value" required>
+        </div>
+        <button onclick="addCustomCookie()">Add Cookie</button>
+        <button onclick="displayCookies()">Show Cookies</button>
+    </div>
+
     <textarea id="cookieDisplay" readonly></textarea>
 
     <script>
+        // Function to add a custom cookie based on user input
+        function addCustomCookie() {
+            const name = document.getElementById("cookieName").value.trim();
+            const value = document.getElementById("cookieValue").value.trim();
+
+            if (!name || !value) {
+                alert("Please provide both a cookie name and value.");
+                return;
+            }
+
+            const expirationDate = new Date();
+            expirationDate.setDate(expirationDate.getDate() + 7); // Set cookie to expire in 7 days
+            document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/; expires=${expirationDate.toUTCString()}`;
+            alert(`Cookie "${name}" has been added!`);
+        }
+
+        // Function to display all cookies
         function displayCookies() {
             const cookies = document.cookie;
             const outputArea = document.getElementById("cookieDisplay");
