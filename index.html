@@ -3,116 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Cookie Manager with URL Tracking</title>
+    <title>Advanced Cookie Creator</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
+            max-width: 800px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="datetime-local"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #007BFF;
+            color: white;
         }
         #cookieDisplay {
             width: 100%;
-            height: 200px;
-            margin-top: 20px;
+            height: 150px;
             font-family: monospace;
-        }
-        .form-group {
-            margin-bottom: 10px;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <h1>Advanced Cookie Manager with URL Tracking</h1>
-    <p>Use the options below to add, view, or manage cookies.</p>
+    <h1>Advanced Cookie Creator</h1>
+    <p>Create a cookie with all possible options using the form below.</p>
 
-    <!-- Add a custom cookie -->
-    <div>
+    <div id="cookieForm">
         <div class="form-group">
             <label for="cookieName">Cookie Name:</label>
             <input type="text" id="cookieName" placeholder="Enter cookie name" required>
         </div>
         <div class="form-group">
             <label for="cookieValue">Cookie Value:</label>
-            <input type="text" id="cookieValue" placeholder="Enter cookie value" required>
+            <textarea id="cookieValue" placeholder="Enter cookie value" required></textarea>
         </div>
         <div class="form-group">
-            <label for="cookieExpiration">Expiration Date (optional, format: YYYY-MM-DDTHH:mm:ssZ):</label>
-            <input type="text" id="cookieExpiration" placeholder="e.g., 2024-12-31T23:59:59Z">
+            <label for="cookieExpiration">Expiration Date and Time (optional):</label>
+            <input type="datetime-local" id="cookieExpiration">
         </div>
-        <button onclick="addCustomCookie()">Add Cookie</button>
+        <div class="form-group">
+            <label for="cookiePath">Path (optional):</label>
+            <input type="text" id="cookiePath" placeholder="e.g., / or /subdirectory">
+        </div>
+        <div class="form-group">
+            <label for="cookieDomain">Domain (optional):</label>
+            <input type="text" id="cookieDomain" placeholder="e.g., example.com">
+        </div>
+        <div class="form-group">
+            <label for="cookieSecure">Secure (Send only over HTTPS):</label>
+            <select id="cookieSecure">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="cookieHttpOnly">HttpOnly (Inaccessible to JavaScript):</label>
+            <select id="cookieHttpOnly">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+            </select>
+        </div>
+        <button onclick="createCookie()">Create Cookie</button>
     </div>
 
-    <!-- Enable/Disable URL Tracking -->
     <div>
-        <button id="toggleTrackingButton" onclick="toggleTracking()">Enable URL Tracking</button>
-    </div>
-
-    <!-- Buttons for actions -->
-    <div>
+        <h2>Saved Cookies</h2>
         <button onclick="displayCookies()">Show Cookies</button>
-        <button onclick="displaySavedURLs()">Show Saved URLs</button>
-        <button onclick="deleteAllCookies()">Delete All Cookies Added Here</button>
+        <textarea id="cookieDisplay" readonly></textarea>
     </div>
-
-    <!-- Textarea to display cookies -->
-    <textarea id="cookieDisplay" readonly></textarea>
 
     <script>
-        let isTrackingEnabled = false;
-
-        // Utility function to set a cookie
-        function setCookie(name, value, days) {
-            const date = new Date();
-            date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-            document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/; expires=${date.toUTCString()}`;
-        }
-
-        // Utility function to get a cookie value
-        function getCookie(name) {
-            const cookies = document.cookie.split('; ');
-            for (let cookie of cookies) {
-                const [key, value] = cookie.split('=');
-                if (decodeURIComponent(key) === name) {
-                    return decodeURIComponent(value);
-                }
-            }
-            return null;
-        }
-
-        // Function to toggle URL tracking
-        function toggleTracking() {
-            isTrackingEnabled = !isTrackingEnabled;
-            const button = document.getElementById("toggleTrackingButton");
-            button.textContent = isTrackingEnabled ? "Disable URL Tracking" : "Enable URL Tracking";
-            setCookie("urlTrackingEnabled", isTrackingEnabled, 365); // Save state in cookie
-            alert(`URL Tracking has been ${isTrackingEnabled ? "enabled" : "disabled"}.`);
-        }
-
-        // Function to add a custom cookie
-        function addCustomCookie() {
+        function createCookie() {
             const name = document.getElementById("cookieName").value.trim();
             const value = document.getElementById("cookieValue").value.trim();
             const expiration = document.getElementById("cookieExpiration").value.trim();
+            const path = document.getElementById("cookiePath").value.trim();
+            const domain = document.getElementById("cookieDomain").value.trim();
+            const secure = document.getElementById("cookieSecure").value === "true";
+            const httpOnly = document.getElementById("cookieHttpOnly").value === "true";
 
-            if (!name || !value) {
-                alert("Please provide both a cookie name and value.");
+            if (!name) {
+                alert("Please provide a cookie name.");
                 return;
             }
 
-            let cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/;`;
+            let cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(value)};`;
+
             if (expiration) {
                 const date = new Date(expiration);
                 if (isNaN(date)) {
-                    alert("Invalid expiration date format. Use ISO format: YYYY-MM-DDTHH:mm:ssZ");
+                    alert("Invalid expiration date format.");
                     return;
                 }
                 cookieString += ` expires=${date.toUTCString()};`;
             }
 
+            if (path) {
+                cookieString += ` path=${path};`;
+            }
+
+            if (domain) {
+                cookieString += ` domain=${domain};`;
+            }
+
+            if (secure) {
+                cookieString += " Secure;";
+            }
+
+            if (httpOnly) {
+                alert("Note: HttpOnly cookies cannot be set directly via JavaScript.");
+                cookieString += " HttpOnly;";
+            }
+
             document.cookie = cookieString;
-            alert(`Cookie "${name}" has been added!`);
+            alert(`Cookie "${name}" has been created!`);
         }
 
-        // Function to display cookies and URL tracking data
         function displayCookies() {
             const cookies = document.cookie;
             const outputArea = document.getElementById("cookieDisplay");
@@ -122,82 +149,13 @@
                 return;
             }
 
-            // Parse and display cookies
             const formattedCookies = cookies.split('; ').map(cookie => {
                 const [name, value] = cookie.split('=');
-                return `Name: ${name}\nValue: ${decodeURIComponent(value || "")}`;
+                return `Name: ${decodeURIComponent(name)}\nValue: ${decodeURIComponent(value || "")}`;
             }).join('\n\n');
 
-            // Retrieve the tracked URLs from localStorage
-            const trackedUrls = JSON.parse(localStorage.getItem("trackedUrls") || "[]");
-            const trackingInfo = trackedUrls.length
-                ? `\n\nTracked URLs:\n${trackedUrls.join("\n")}`
-                : "\n\nNo URLs tracked yet.";
-
-            outputArea.value = formattedCookies + trackingInfo;
+            outputArea.value = formattedCookies;
         }
-
-        // Function to display all URLs saved in localStorage
-        function displaySavedURLs() {
-            const outputArea = document.getElementById("cookieDisplay");
-            const trackedUrls = JSON.parse(localStorage.getItem("trackedUrls") || "[]");
-
-            if (trackedUrls.length === 0) {
-                outputArea.value = "No saved URLs found.";
-                return;
-            }
-
-            outputArea.value = `Saved URLs:\n${trackedUrls.join("\n")}`;
-        }
-
-        // Function to delete all cookies and clear tracking data
-        function deleteAllCookies() {
-            const cookies = document.cookie.split('; ');
-            cookies.forEach(cookie => {
-                const [name] = cookie.split('=');
-                document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;`;
-            });
-            localStorage.removeItem("trackedUrls");
-            alert("All cookies and tracking data have been deleted!");
-            displayCookies();
-        }
-
-        // Event listener to track navigation
-        document.addEventListener("click", event => {
-            if (!isTrackingEnabled) return;
-
-            const link = event.target.closest("a");
-            if (link && link.href) {
-                // Save the URL to localStorage
-                const trackedUrls = JSON.parse(localStorage.getItem("trackedUrls") || "[]");
-                trackedUrls.push(link.href);
-                localStorage.setItem("trackedUrls", JSON.stringify(trackedUrls));
-            }
-        });
-
-        // Set last visit cookie on page unload
-        window.addEventListener("unload", () => {
-            const now = new Date().toISOString();
-            document.cookie = `lastVisit=${encodeURIComponent(now)}; path=/; expires=${new Date(now).setFullYear(new Date().getFullYear() + 1)}`;
-        });
-
-        // Initialize state on page load
-        window.addEventListener("load", () => {
-            const lastVisitCookie = getCookie("lastVisit");
-            if (lastVisitCookie) {
-                alert(`Welcome back! Your last visit was on ${new Date(lastVisitCookie).toLocaleString()}`);
-            } else {
-                alert("Welcome! This is your first visit.");
-            }
-
-            // Restore URL tracking state
-            const trackingState = getCookie("urlTrackingEnabled");
-            isTrackingEnabled = trackingState === "true";
-            const button = document.getElementById("toggleTrackingButton");
-            button.textContent = isTrackingEnabled ? "Disable URL Tracking" : "Enable URL Tracking";
-
-            displayCookies();
-        });
     </script>
 </body>
 </html>
