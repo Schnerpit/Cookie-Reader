@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Cookie Creator</title>
+    <title>Cookie Creator with Properties</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -39,16 +39,17 @@
         }
         #cookieDisplay {
             width: 100%;
-            height: 150px;
+            height: 200px;
             font-family: monospace;
             margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <h1>Advanced Cookie Creator</h1>
-    <p>Create a cookie with all possible options using the form below.</p>
+    <h1>Cookie Creator with Properties</h1>
+    <p>Create cookies with all properties, and view detailed information about them.</p>
 
+    <!-- Cookie Creation Form -->
     <div id="cookieForm">
         <div class="form-group">
             <label for="cookieName">Cookie Name:</label>
@@ -87,6 +88,7 @@
         <button onclick="createCookie()">Create Cookie</button>
     </div>
 
+    <!-- Display Cookies -->
     <div>
         <h2>Saved Cookies</h2>
         <button onclick="displayCookies()">Show Cookies</button>
@@ -108,7 +110,17 @@
                 return;
             }
 
-            let cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(value)};`;
+            // Create a value that includes all properties
+            const cookieData = JSON.stringify({
+                value,
+                expiration,
+                path,
+                domain,
+                secure,
+                httpOnly,
+            });
+
+            let cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(cookieData)};`;
 
             if (expiration) {
                 const date = new Date(expiration);
@@ -133,7 +145,6 @@
 
             if (httpOnly) {
                 alert("Note: HttpOnly cookies cannot be set directly via JavaScript.");
-                cookieString += " HttpOnly;";
             }
 
             document.cookie = cookieString;
@@ -151,7 +162,25 @@
 
             const formattedCookies = cookies.split('; ').map(cookie => {
                 const [name, value] = cookie.split('=');
-                return `Name: ${decodeURIComponent(name)}\nValue: ${decodeURIComponent(value || "")}`;
+                let properties;
+
+                try {
+                    properties = JSON.parse(decodeURIComponent(value));
+                } catch {
+                    properties = { value: decodeURIComponent(value || "") };
+                }
+
+                const details = `
+Name: ${decodeURIComponent(name)}
+Value: ${properties.value || ""}
+Expiration: ${properties.expiration || "Not set"}
+Path: ${properties.path || "Default"}
+Domain: ${properties.domain || "Default"}
+Secure: ${properties.secure ? "Yes" : "No"}
+HttpOnly: ${properties.httpOnly ? "Yes" : "No"}
+                `.trim();
+
+                return details;
             }).join('\n\n');
 
             outputArea.value = formattedCookies;
